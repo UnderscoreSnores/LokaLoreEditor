@@ -41,6 +41,7 @@ export default function Component() {
   const [shareableCode, setShareableCode] = useState("")
   const [showLoadCodeDialog, setShowLoadCodeDialog] = useState(false)
   const [codeToLoad, setCodeToLoad] = useState("")
+  const [showRegister, setShowRegister] = useState(false)
 
   const { toast } = useToast() // Initialize toast
 
@@ -523,34 +524,48 @@ export default function Component() {
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center font-mono">
         <Card className="w-96 bg-gray-900 border-gray-700">
           <CardHeader>
-            <h1 className="text-2xl font-bold text-center text-green-400 pixelated-text">Adventure WebUI</h1>
+            <h1 className="text-2xl font-bold text-center text-green-400 pixelated-text">Loka Lore Editor</h1>
             <p className="text-center text-gray-400 text-sm pixelated-text">Login to create and save lores</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label className="text-white pixelated-text">Username</Label>
-              <Input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white pixelated-text"
-                placeholder="Enter username"
-              />
-            </div>
-            <div>
-              <Label className="text-white pixelated-text">Password</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white pixelated-text"
-                placeholder="Enter password"
-              />
-            </div>
-            <Button onClick={handleLogin} className="w-full bg-green-600 hover:bg-green-700 pixelated-text">
-              <LogIn className="w-4 h-4 mr-2" />
-              Login
-            </Button>
+            {showRegister ? (
+              <RegisterForm />
+            ) : (
+              <>
+                <div>
+                  <Label className="text-white pixelated-text">Username</Label>
+                  <Input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white pixelated-text"
+                    placeholder="Enter username"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white pixelated-text">Password</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white pixelated-text"
+                    placeholder="Enter password"
+                  />
+                </div>
+                <Button onClick={handleLogin} className="w-full bg-green-600 hover:bg-green-700 pixelated-text">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+                <Button variant="outline" onClick={() => setShowDiscordLogin(true)} className="w-full text-white hover:bg-gray-700 pixelated-text mb-2">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login with Discord
+                </Button>
+                <Button variant="outline" onClick={() => setShowRegister(true)} className="w-full text-white hover:bg-gray-700 pixelated-text">
+                  <User className="w-4 h-4 mr-2" />
+                  Register
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
