@@ -13,8 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import DiscordIcon from "@/components/ui/DiscordIcon" // Add DiscordIcon import
 import { useToast } from "@/hooks/use-toast" // Assuming useToast is available
-import { useSession } from "next-auth/react";
-import { Palette, Hash, Save, FolderOpen, LogIn, LogOut, User, Share2, ClipboardCopy, Plus, Minus } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { Palette, Hash, Save, FolderOpen, LogOut, User, Share2, ClipboardCopy, Plus, Minus } from "lucide-react"
 
 interface Lore {
   id: string
@@ -24,15 +24,13 @@ interface Lore {
 }
 
 export default function Component() {
-  const { data: session } = useSession();
-  const isLoggedIn = !!session;
+  const { data: session } = useSession()
+  const isLoggedIn = !!session
 
   const [selectedColor, setSelectedColor] = useState("#00CA2B") // For single color
   const [gradientColors, setGradientColors] = useState(["#00CA2B", "#00FFB7"]) // For gradient, initially 2 colors
   const [showSingleColorPicker, setShowSingleColorPicker] = useState(false) // New state for single color picker
   const [showGradientColorPicker, setShowGradientColorPicker] = useState(false) // New state for gradient picker
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [savedLores, setSavedLores] = useState<Lore[]>([])
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
@@ -45,8 +43,6 @@ export default function Component() {
   const [shareableCode, setShareableCode] = useState("")
   const [showLoadCodeDialog, setShowLoadCodeDialog] = useState(false)
   const [codeToLoad, setCodeToLoad] = useState("")
-  const [showRegister, setShowRegister] = useState(false)
-  const [showDiscordLogin, setShowDiscordLogin] = useState(false)
 
   const { toast } = useToast() // Initialize toast
 
@@ -74,9 +70,8 @@ export default function Component() {
 
   // Load saved data on component mount
   useEffect(() => {
-    if (session) {
-      const savedUser = session.user.name
-      loadUserLores(savedUser)
+    if (session?.user?.name) {
+      loadUserLores(session.user.name)
     }
   }, [session])
 
@@ -104,7 +99,7 @@ export default function Component() {
   }
 
   const saveLore = () => {
-    if (!session) {
+    if (!session?.user?.name) {
       toast({
         title: "Error",
         description: "You must be logged in to save lores.",
@@ -152,7 +147,7 @@ export default function Component() {
   const deleteLore = (id: string) => {
     const updatedLores = savedLores.filter((lore) => lore.id !== id)
     setSavedLores(updatedLores)
-    localStorage.setItem(`adventureWebUI_lores_${session?.user.name}`, JSON.stringify(updatedLores))
+    localStorage.setItem(`adventureWebUI_lores_${session?.user?.name}`, JSON.stringify(updatedLores))
     toast({
       title: "Success",
       description: "Lore deleted.",
@@ -518,23 +513,98 @@ export default function Component() {
       <style jsx global>{`
         @font-face {
           font-family: "Minecraftia";
-          src: url("/fonts/Minecraftia-Regular.ttf");
+          src: url("/fonts/Minecraftia.ttf") format("truetype"); /* Assuming font is in public/fonts */
+          font-weight: normal;
+          font-style: normal;
         }
         .pixelated-text {
-          font-family: "Minecraftia", monospace;
+          font-family: "Minecraftia", monospace; /* Fallback to monospace */
+          text-rendering: crisp-edges;
+          -webkit-font-smoothing: none;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        .editor-container {
+          position: relative;
+          height: 400px; /* Fixed height for editor area */
+          border: 1px solid #4a5568; /* Add a border to the container */
+          border-radius: 0.375rem; /* Match shadcn rounded-md */
+          overflow: hidden; /* Ensure children stay within bounds */
+        }
+        .editor-textarea {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: transparent;
+          color: transparent; /* Hide actual text */
+          caret-color: white; /* Keep caret visible */
+          z-index: 1;
+          resize: none;
+          overflow: auto; /* Allow textarea to scroll */
+          white-space: pre-wrap; /* Preserve whitespace and wrap lines */
+          word-break: break-word; /* Break long words */
+          padding: 0.75rem 1rem; /* Match shadcn textarea padding */
+          line-height: 1.5; /* Match line height for alignment */
+          box-sizing: border-box; /* Include padding in width/height */
+          border: none; /* Remove default textarea border */
+        }
+        .editor-highlight {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none; /* Allow clicks to pass through to textarea */
+          overflow: auto; /* Allow highlight div to scroll */
+          z-index: 0;
+          padding: 0.75rem 1rem; /* Match shadcn textarea padding */
+          line-height: 1.5; /* Match line height for alignment */
+          box-sizing: border-box; /* Include padding in width/height */
+          background-color: #1a202c; /* Match bg-gray-950 for visual consistency */
+        }
+        .editor-highlight pre {
+          margin: 0;
+          white-space: pre-wrap; /* Preserve whitespace and wrap lines */
+          word-break: break-word; /* Break long words */
+          color: white; /* Default text color for editor */
+        }
+        /* Custom styles for color input to fill the box */
+        input[type="color"] {
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+          border: none;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+          padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+          border: none;
+          border-radius: 0.375rem; /* Match parent rounded-md */
+        }
+        input[type="color"]::-moz-color-swatch {
+          border: none;
+          border-radius: 0.375rem; /* Match parent rounded-md */
         }
       `}</style>
-      <div>
+      <div className="max-w-7xl mx-auto">
         {!isLoggedIn ? (
           <div className="flex items-center justify-center h-full">
             <Card className="w-96 bg-gray-900 border-gray-700">
               <CardHeader>
                 <h1 className="text-2xl font-bold text-center text-green-400 pixelated-text">Loka Lore Editor</h1>
-                <p className="text-center text-gray-400 text-sm pixelated-text">Login with Discord to create and save lores</p>
+                <p className="text-center text-gray-400 text-sm pixelated-text">
+                  Login with Discord to create and save lores
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  onClick={() => signIn('discord', { callbackUrl: '/', redirect: true })} 
+                <Button
+                  onClick={() => signIn("discord", { callbackUrl: "/", redirect: true })}
                   className="w-full bg-discord hover:bg-discord-dark text-white"
                 >
                   <DiscordIcon className="w-4 h-4 mr-2" />
@@ -544,20 +614,416 @@ export default function Component() {
             </Card>
           </div>
         ) : (
-          <div className="flex flex-col space-y-4">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-green-400 pixelated-text">Loka Lore Editor</h1>
-              <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => signOut()} className="hover:bg-gray-700 pixelated-text">
+          <>
+            {/* Header with user info */}
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-2xl font-bold text-green-400 pixelated-text">Adventure WebUI</h1>
+              <div className="flex items-center gap-4">
+                <span className="text-gray-400 flex items-center gap-2 pixelated-text">
+                  <User className="w-4 h-4" />
+                  {session?.user?.name || "Guest"}
+                </span>
+                <Button
+                  onClick={() => signOut()}
+                  size="sm"
+                  variant="outline"
+                  className="border-gray-600 text-white bg-transparent pixelated-text"
+                >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
               </div>
             </div>
 
-            {/* Rest of the editor UI */}
-            {/* ... */}
-          </div>
+            {/* Main Layout - Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+              {/* Left Panel - Editor */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader className="pb-3">
+                  {/* Save/Load/Share Controls */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 pixelated-text">
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Lore
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gray-900 border-gray-700 text-white font-mono">
+                        <DialogHeader>
+                          <DialogTitle className="text-green-400 pixelated-text">Save Lore</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-white pixelated-text">Lore Name</Label>
+                            <Input
+                              value={loreName}
+                              onChange={(e) => setLoreName(e.target.value)}
+                              className="bg-gray-800 border-gray-600 text-white pixelated-text"
+                              placeholder="Enter lore name"
+                            />
+                          </div>
+                          <Button onClick={saveLore} className="w-full bg-green-600 hover:bg-green-700 pixelated-text">
+                            Save
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-600 text-white bg-transparent pixelated-text"
+                        >
+                          <FolderOpen className="w-4 h-4 mr-2" />
+                          Load Lore
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[80vh] font-mono">
+                        <DialogHeader>
+                          <DialogTitle className="text-green-400 pixelated-text">Saved Lores</DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="max-h-[60vh]">
+                          <div className="space-y-4">
+                            {savedLores.length === 0 ? (
+                              <p className="text-gray-400 text-center py-8 pixelated-text">No saved lores found</p>
+                            ) : (
+                              savedLores.map((lore) => (
+                                <div key={lore.id} className="border border-gray-600 rounded-lg p-4 space-y-3">
+                                  {/* Lore Header */}
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="font-semibold text-green-400 text-lg pixelated-text">
+                                        {lore.name}
+                                      </div>
+                                      <div className="text-xs text-gray-400 pixelated-text">
+                                        Saved: {new Date(lore.createdAt).toLocaleDateString()} at{" "}
+                                        {new Date(lore.createdAt).toLocaleTimeString()}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => loadLore(lore)}
+                                        className="bg-blue-600 hover:bg-blue-700 pixelated-text"
+                                      >
+                                        Load
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => deleteLore(lore.id)}
+                                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white pixelated-text"
+                                      >
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Lore Preview */}
+                                  <div>
+                                    <Label className="text-gray-300 text-xs mb-2 block pixelated-text">Preview:</Label>
+                                    {renderLorePreview(lore.content, true)}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* Share Lore Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={generateShareableCode}
+                      className="border-gray-600 text-white bg-transparent pixelated-text"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Lore
+                    </Button>
+
+                    {/* Load from Code Button */}
+                    <Dialog open={showLoadCodeDialog} onOpenChange={setShowLoadCodeDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-600 text-white bg-transparent pixelated-text"
+                        >
+                          <ClipboardCopy className="w-4 h-4 mr-2" />
+                          Load from Code
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gray-900 border-gray-700 text-white font-mono">
+                        <DialogHeader>
+                          <DialogTitle className="text-green-400 pixelated-text">Load Lore from Code</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-white pixelated-text">Paste Shareable Code</Label>
+                            <Textarea
+                              value={codeToLoad}
+                              onChange={(e) => setCodeToLoad(e.target.value)}
+                              className="bg-gray-800 border-gray-600 text-white pixelated-text min-h-[100px]"
+                              placeholder="Paste your shareable lore code here..."
+                            />
+                          </div>
+                          <Button
+                            onClick={loadFromShareableCode}
+                            className="w-full bg-green-600 hover:bg-green-700 pixelated-text"
+                          >
+                            Load Lore
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {/* Share Lore Dialog (separate from trigger) */}
+                  <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+                    <DialogContent className="bg-gray-900 border-gray-700 text-white font-mono">
+                      <DialogHeader>
+                        <DialogTitle className="text-green-400 pixelated-text">Share Your Lore</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <p className="text-gray-300 pixelated-text">Copy the code below and share it with others:</p>
+                        <Textarea
+                          value={shareableCode}
+                          readOnly
+                          className="bg-gray-800 border-gray-600 text-white pixelated-text min-h-[150px]"
+                        />
+                        <Button
+                          onClick={copyShareableCode}
+                          className="w-full bg-blue-600 hover:bg-blue-700 pixelated-text"
+                        >
+                          <ClipboardCopy className="w-4 h-4 mr-2" />
+                          Copy Code
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Formatting Toolbar */}
+                  <div className="flex gap-1 mb-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowSingleColorPicker((prev) => !prev)
+                        setShowGradientColorPicker(false) // Close gradient picker if open
+                      }}
+                      className="w-8 h-8 p-0 bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500"
+                    >
+                      <Palette className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => insertCode("<b>", "</b>")}
+                      className="w-8 h-8 p-0 bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 pixelated-text"
+                    >
+                      B
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => insertCode("<i>", "</i>")}
+                      className="w-8 h-8 p-0 bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 pixelated-text"
+                    >
+                      I
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => insertCode("<u>", "</u>")}
+                      className="w-8 h-8 p-0 bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 pixelated-text"
+                    >
+                      U
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => insertCode("<st>", "</st>")}
+                      className="w-8 h-8 p-0 bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 pixelated-text"
+                    >
+                      S
+                    </Button>
+                  </div>
+
+                  {/* Color Tools */}
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setShowSingleColorPicker((prev) => !prev)
+                          setShowGradientColorPicker(false) // Close gradient picker if open
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-7 text-xs pixelated-text"
+                      >
+                        <Hash className="w-3 h-3 mr-1" />
+                        Color
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setShowGradientColorPicker((prev) => !prev)
+                          setShowSingleColorPicker(false) // Close single color picker if open
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 h-7 text-xs pixelated-text"
+                      >
+                        Gradient
+                      </Button>
+                    </div>
+
+                    {/* Minecraft Colors */}
+                    <div>
+                      <Label className="text-gray-300 text-xs mb-2 block font-semibold pixelated-text">
+                        Minecraft Colors
+                      </Label>
+                      <div className="grid grid-cols-4 gap-1">
+                        {minecraftColors.map(({ name, color, display }) => (
+                          <Button
+                            key={name}
+                            size="sm"
+                            onClick={() => insertCode(`<${name}>`, `</${name}>`)}
+                            className="h-6 px-2 text-xs border hover:scale-105 transition-transform pixelated-text"
+                            style={{
+                              backgroundColor: color,
+                              color:
+                                color === "#000000" ||
+                                color === "#0000AA" ||
+                                color === "#00AA00" ||
+                                color === "#AA0000" ||
+                                color === "#AA00AA" ||
+                                color === "#555555"
+                                  ? "#FFFFFF"
+                                  : "#000000",
+                              borderColor: color,
+                            }}
+                          >
+                            {name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Single Color Picker */}
+                    {showSingleColorPicker && (
+                      <div className="p-4 bg-gray-800 rounded-lg border border-gray-600">
+                        <Label className="text-white text-xs block mb-1 pixelated-text">Single Color</Label>
+                        <div className="flex flex-col gap-2">
+                          <div className="w-full h-10 rounded-md overflow-hidden border border-gray-600">
+                            <Input
+                              type="color"
+                              value={selectedColor}
+                              onChange={(e) => setSelectedColor(e.target.value)}
+                              className="w-full h-full p-0 border-0 cursor-pointer"
+                            />
+                          </div>
+                          <Input
+                            type="text"
+                            value={selectedColor}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            className="bg-gray-700 border-gray-600 text-white text-xs h-8 pixelated-text w-full"
+                          />
+                        </div>
+                        <Button
+                          onClick={handleCreateColor}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-8 text-sm pixelated-text mt-4"
+                        >
+                          Create Color
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Gradient Color Pickers */}
+                    {showGradientColorPicker && (
+                      <div className="p-4 bg-gray-800 rounded-lg border border-gray-600">
+                        <Label className="text-white text-xs block mb-1 pixelated-text">Gradient Colors</Label>
+                        <div className="space-y-3">
+                          {gradientColors.map((color, index) => (
+                            <div key={index} className="flex flex-col gap-2">
+                              <Label className="text-gray-400 text-xs pixelated-text">Color {index + 1}</Label>
+                              <div className="w-full h-10 rounded-md overflow-hidden border border-gray-600">
+                                <Input
+                                  type="color"
+                                  value={color}
+                                  onChange={(e) => handleGradientColorChange(index, e.target.value)}
+                                  className="w-full h-full p-0 border-0 cursor-pointer"
+                                />
+                              </div>
+                              <Input
+                                type="text"
+                                value={color}
+                                onChange={(e) => handleGradientColorChange(index, e.target.value)}
+                                className="bg-gray-700 border-gray-600 text-white text-xs h-8 pixelated-text w-full"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddGradientColor}
+                            disabled={gradientColors.length >= 5}
+                            className="h-7 px-3 text-xs bg-gray-700 border-gray-600 text-white hover:bg-gray-600 pixelated-text"
+                          >
+                            <Plus className="w-3 h-3 mr-1" /> Add Color
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleRemoveGradientColor}
+                            disabled={gradientColors.length <= 2}
+                            className="h-7 px-3 text-xs bg-gray-700 border-gray-600 text-white hover:bg-gray-600 pixelated-text"
+                          >
+                            <Minus className="w-3 h-3 mr-1" /> Remove Last
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={handleCreateGradient}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-1 h-8 text-sm pixelated-text mt-4"
+                        >
+                          Create Gradient
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Character/Line Counter */}
+                  <div className="text-xs text-gray-400 mt-2 pixelated-text">
+                    Lines: {getLineCount()}/15 | Current line: {getCurrentLineLength()}/32 chars
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0 editor-container">
+                  <Textarea
+                    ref={textareaRef}
+                    value={editorContent}
+                    onChange={handleContentChange}
+                    className="editor-textarea bg-gray-950 text-sm focus:border-green-500"
+                    placeholder="Enter your lore text with color codes... (15 lines max, 32 chars per line)"
+                  />
+                  <div ref={highlightRef} className="editor-highlight bg-gray-950 rounded-md">
+                    <pre
+                      className="pixelated-text text-sm"
+                      dangerouslySetInnerHTML={{ __html: highlightEditorContent(editorContent) }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Right Panel - Minecraft Tooltip Preview */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="p-4">{renderMinecraftPreview(editorContent)}</CardContent>
+              </Card>
+            </div>
+          </>
         )}
       </div>
     </div>
