@@ -1,27 +1,49 @@
-import { NextResponse } from "next/server";
-import { registerSchema } from "../../components/RegisterForm";
+import prisma from '@/lib/prisma'
+import * as z from 'zod'
+import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const validatedData = registerSchema.parse(body);
+const registerSchema = z.object({
+  username: z.string().min(3).max(30),
+  email: z.string().email(),
+  password: z.string().min(6),
+})
 
-    // TODO: Implement your actual registration logic here
-    // This is just a placeholder for now
-    return NextResponse.json({
-      success: true,
-      message: "Registration successful! Please continue with Discord login",
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { error: "An error occurred during registration" },
-      { status: 500 }
-    );
+export async function POST(request: NextRequest) {
+  const body = await request.json()
+  const validation = registerSchema.safeParse(body)
+
+  if (!validation.success) {
+    return NextResponse.json(validation.error.errors, { status: 400 })
   }
+
+  const { username, email, password } = validation.data
+
+  // Check if user exists
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email },
+        { username },
+      ],
+    },
+  })
+
+  if (existingUser) {
+    return NextResponse.json({ error: 'User already exists' }, { status: 400 })
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      username,
+      email,
+      password: hashedPassword,
+    },
+  })
+
+  return NextResponse.json({ message: 'User created successfully' }, { status: 201 })
 }
